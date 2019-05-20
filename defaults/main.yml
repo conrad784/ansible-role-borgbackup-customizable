@@ -1,0 +1,28 @@
+---
+
+borg_scripts_directory: "/root/borg-scripts"
+borg_rsh: "ssh -i ~/.ssh/backup_key -oBatchMode=yes"
+borg_time: "*-*-* 06:00:00"
+borg_exclude_from: "/etc/borg_excludelist"
+
+borgbackup_jobs:
+  - name: "borgSystem"
+    borg_repository: "/backupSpace/{{ ansible_hostname }}/borgSystem"
+    borg_passphrase: "$(cat ~/.borg-passphrase)"
+    borg_rsh: "ssh -i ~/.ssh/backup_key -oBatchMode=yes"
+    borg_time: "*-*-* 06:00:00"
+    borg_exclude_from: "/etc/borg_excludelist"
+    borg_one_file_system: True
+  - name: "borgHome"
+    borg_repository: "/backupSpace/{{ ansible_hostname }}/borgHome"
+    borg_source_directories:
+      - "/home"
+    borg_passphrase: "$(cat ~/.borg-passphrase)"
+    borg_rsh: "ssh -i ~/.ssh/backup_key -oBatchMode=yes"
+    borg_time: "*-*-* 06:00:00"
+    borg_exclude_from: "/etc/borg_excludelist"
+    borg_one_file_system: True
+
+client:
+  ssh_key_location: /root/.ssh
+

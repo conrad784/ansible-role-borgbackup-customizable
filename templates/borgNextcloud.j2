@@ -1,0 +1,49 @@
+#!/bin/bash
+# {{ ansible_managed }}
+
+{% include './environment_section.j2' %}
+
+
+nextcloudFiledir="/var/www/nextcloud"
+nextcloudDatabase="nextcloud"
+
+dbUser="{{ nextcloud_user }}"
+dbPassword="{{ nextcloud_db_password }}"
+
+dbDumpdir="/var/backups/dbdump"
+dbDumpfilename=$(hostname)-nextcloud-db.sql-$(date +"%Y-%m-%d %H:%M:%S")
+
+webserverUser="www-data"
+
+# some helpers and error handling:
+info() { printf "\n%s %s\n\n" "$( date )" "$*" >&2; }
+trap 'echo $( date ) Backup interrupted >&2; exit 2' INT TERM
+
+echo "###### Starting borg backup on $(date) ######"
+#info "Setting maintenance mode ..."
+#sudo -u ${webserverUser} php ${nextcloudFiledir}/occ maintenance:mode --on
+
+info "Creating database dump ..."
+mysqldump --single-transaction --skip-lock-tables -h localhost -u "${dbUser}" -p"${dbPassword}" "${nextcloudDatabase}" > "${dbDumpdir}/${dbDumpfilename}"
+
+echo "Syncing backup files ..."
+borg create -v --stats --compression {{ item.borg_compression| default("lz4") }} \
+    ::'{hostname}-{user}-{now:%Y-%m-%dT_%H:%M:%S}'                              \
+    $nextcloudFiledir                                                           \
+    $dbDumpdir                                                                  \
+                                                                                \
+    --exclude-caches                                                            \
+    --exclude '*/appdata_*/preview/'                                            \
+    --exclude '*.log'
+
+backup_exit=$?
+
+{% include './prune_section.j2' %}
+
+
+{% include './check_section.j2' %}
+
+
+unset BORG_PASSPHRASE
+
+{% include './exit_section.j2' %}

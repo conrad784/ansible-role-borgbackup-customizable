@@ -1,0 +1,52 @@
+#!/bin/bash
+# {{ ansible_managed }}
+
+{% include './environment_section.j2' %}
+
+
+# some helpers and error handling:
+info() { printf "\n%s %s\n\n" "$( date )" "$*" >&2; }
+trap 'echo $( date ) Backup interrupted >&2; exit 2' INT TERM
+
+echo "###### Starting borg backup on $(date) ######"
+
+echo "Syncing backup files ..."
+borg create -v --stats --compression {{ item.borg_compression| default("lz4") }} \
+    {% if item.borg_one_file_system is defined and item.borg_one_file_system -%}
+    --one-file-system                                                           \
+    {% endif -%}
+    ::'{hostname}-{user}-{now:%Y-%m-%dT_%H:%M:%S}'                              \
+    /bin                                                                        \
+    /boot                                                                       \
+    /etc                                                                        \
+    /opt                                                                        \
+    /root                                                                       \
+    /sbin                                                                       \
+    /srv                                                                        \
+    /usr                                                                        \
+    /var                                                                        \
+                                                                                \
+    --exclude-caches                                                            \
+    --exclude-from {{ item.borg_exclude_from | default( borg_exclude_from ) }}  \
+    --exclude /var/cache                                                        \
+    --exclude /var/spool                                                        \
+    --exclude /var/lib/libvirt                                                  \
+    --exclude /var/lib/docker                                                   \
+    --exclude /var/lib/vz                                                       \
+    --exclude /var/lib/mysql                                                    \
+    --exclude /var/lib/postgresql                                               \
+    --exclude '*/run/'                                                          \
+    --exclude '*/prometheus/'                                                   \
+    --exclude '/etc/ssh/*_key'
+
+backup_exit=$?
+
+{% include './prune_section.j2' %}
+
+
+{% include './check_section.j2' %}
+
+
+unset BORG_PASSPHRASE
+
+{% include './exit_section.j2' %}

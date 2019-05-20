@@ -1,0 +1,24 @@
+info "Pruning repository"
+
+# Use the `prune` subcommand to maintain X daily, X weekly and X monthly
+# archives of THIS machine. The '{hostname}-' prefix is very important to
+# limit prune's operation to this machine's archives and not apply to
+# other machines' archives also:
+
+borg prune                          \
+    --list                          \
+    --prefix '{hostname}-'          \
+    --show-rc                       \
+    {% if item.borg_prune_arguments is defined -%}
+    {% for arg in item.borg_prune_arguments -%}
+    --{{ arg }} \
+    {% endfor -%}
+    {% else -%}
+    --keep-within   1d              \
+    --keep-daily    7               \
+    --keep-weekly   4               \
+    --keep-monthly  6               \
+    --keep-yearly   12              \
+    {% endif %}
+
+prune_exit=$?

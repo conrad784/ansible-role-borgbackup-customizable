@@ -1,0 +1,40 @@
+#!/bin/bash
+# {{ ansible_managed }}
+
+{% include './environment_section.j2' %}
+
+
+# some helpers and error handling:
+info() { printf "\n%s %s\n\n" "$( date )" "$*" >&2; }
+trap 'echo $( date ) Backup interrupted >&2; exit 2' INT TERM
+
+echo "###### Starting borg backup on $(date) ######"
+
+echo "Syncing backup files ..."
+borg create -v --stats --compression {{ item.borg_compression| default("lz4") }} \
+    {% if item.borg_one_file_system is defined and item.borg_one_file_system -%}
+    --one-file-system                                                           \
+    {% endif -%}
+    ::'{hostname}-{user}-{now:%Y-%m-%dT_%H:%M:%S}'                              \
+    {% for directory in item.borg_source_directories -%} 
+    {{ directory }}                                                             \
+    {% endfor %}                                                                \
+    --exclude-caches                                                            \
+    {% if item.borg_exclude_patterns is defined -%}
+    {% for pattern in item.borg_exclude_patterns -%}
+    --exclude '{{ pattern }}'  \
+    {% endfor -%}
+    {% endif -%}
+    --exclude-from {{ item.borg_exclude_from | default( borg_exclude_from ) }}
+
+backup_exit=$?
+
+{% include './prune_section.j2' %}
+
+
+{% include './check_section.j2' %}
+
+
+unset BORG_PASSPHRASE
+
+{% include './exit_section.j2' %}

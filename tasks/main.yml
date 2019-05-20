@@ -1,0 +1,40 @@
+---
+
+- name: install borgbackup and dependency for ssh-keygen
+  apt:
+    state: present
+    update_cache: yes
+    cache_valid_time: "{{ apt_cache_valid }}"
+    name: ['borgbackup', 'python-pexpect']
+
+- name: Generate ssh keypair
+  expect:
+    command: "ssh-keygen -t ed25519"
+    # only creates the key if the file does not exist
+    creates: "{{ client.ssh_key_location }}/backup_key"
+    responses:
+      "file": "{{ client.ssh_key_location }}/backup_key"
+      "passphrase": ""
+
+- name: make sure excludelist is present
+  copy:
+    content: ""
+    dest: "{{ borg_exclude_from }}"
+    force: no
+    group: root
+    owner: root
+    mode: u=rw,g=r,o=
+
+- name: install systemd-statusmail
+  include_role:
+    name: systemd-statusmail
+
+- name: "Install Backup scripts"
+  include_tasks: install.yml
+  with_items:
+    - "{{ borgbackup_jobs }}"
+
+- name: write help if first installed
+  debug:
+    msg: "config changed, don't forget your PASSPHRASE and init of the backup repository and add it to known_hosts"
+  when: configchange.changed

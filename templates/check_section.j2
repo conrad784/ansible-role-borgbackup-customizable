@@ -1,0 +1,19 @@
+# Repository checks are usefull to be done from time to time.
+# Usually takes some time, so limit it to e.g. Sunday
+# for further saving, only execute full check on first Sunday of the month.
+dom=`(date +%d)`
+dow=`(date +%u)`
+
+if [ $dow -eq 7 ] && [ $dom -le 7 ]
+then
+    info "Checking full repository and all archives"
+    borg check -v
+elif [ $dow -eq 7 ]
+then
+    info "Checking repository only"
+    borg check -v --repository-only
+else
+    info "Skipping check of repository today"
+fi
+
+check_exit=$?

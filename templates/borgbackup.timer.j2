@@ -1,0 +1,10 @@
+[Unit]
+Description=Borg Backup Timer {{ item.name }}
+
+[Timer]
+OnCalendar={{ item.borg_time | default( borg_time ) }}
+RandomizedDelaySec=10min
+Unit={{ item.name }}.service
+
+[Install]
+WantedBy=timers.target

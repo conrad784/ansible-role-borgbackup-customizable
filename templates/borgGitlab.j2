@@ -1,0 +1,42 @@
+#!/bin/bash
+# {{ ansible_managed }}
+
+{% include './environment_section.j2' %}
+
+
+GITLAB_DATA=/var/opt/gitlab
+
+# some helpers and error handling:
+info() { printf "\n%s %s\n\n" "$( date )" "$*" >&2; }
+trap 'echo $( date ) Backup interrupted >&2; exit 2' INT TERM
+
+echo "###### Starting borg backup on $(date) ######"
+
+# let gitlab create a backup of itself, but do NOT put
+# repositories in that file.
+gitlab-rake gitlab:backup:create SKIP=repositories
+
+# find the newest file in the gitlab backup dir
+NEWEST=$(ls -t /var/opt/gitlab/backups | head -n 1)
+
+
+echo "Syncing backup files ..."
+borg create -v --stats --compression lz4 --one-file-system                      \
+    ::'{hostname}-{user}-{now:%Y-%m-%dT_%H:%M:%S}'                              \
+    "${GITLAB_DATA}/backups/${NEWEST}"                                          \
+    "${GITLAB_DATA}/git-data/repositories"                                      \
+                                                                                \
+    --exclude-caches                                                            \
+    --exclude '*/prometheus/'
+
+backup_exit=$?
+
+{% include './prune_section.j2' %}
+
+
+{% include './check_section.j2' %}
+
+
+unset BORG_PASSPHRASE
+
+{% include './exit_section.j2' %}

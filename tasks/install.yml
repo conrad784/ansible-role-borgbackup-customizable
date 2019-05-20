@@ -1,0 +1,47 @@
+---
+
+- name: Create script directory
+  file:
+    path: "{{ borg_scripts_directory }}"
+    owner: root
+    group: root
+    mode: 0755
+    state: directory
+
+- name: "copy backup script for job: {{ item.name }}"
+  template:
+    src: "{{ backup_job }}"
+    dest: "{{ borg_scripts_directory }}/{{ item.name }}"
+    owner: root
+    group: root
+    mode: u=rx,g=rx,o=
+    backup: yes
+  with_first_found:
+    - "{{ item.name }}.j2"
+    - "borgDefault.j2"
+  loop_control:
+    loop_var: backup_job
+  register: configchange
+
+- name: install systemd script
+  template:
+    src: borgbackup.service.j2
+    dest: "/etc/systemd/system/{{ item.name }}.service"
+    owner: root
+    group: root
+    mode: u=rw,g=rw,o=r
+
+- name: install systemd timer
+  template:
+    src: borgbackup.timer.j2
+    dest: "/etc/systemd/system/{{ item.name }}.timer"
+    owner: root
+    group: root
+    mode: u=rw,g=rw,o=r
+
+- name: enable timer
+  systemd:
+    name: "{{ item.name }}.timer"
+    daemon_reload: yes
+    state: started
+    enabled: yes

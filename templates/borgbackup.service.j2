@@ -1,0 +1,10 @@
+[Unit]
+Description=Borg Backup {{ item.name }}
+OnFailure=status-email-admin@%n.service
+
+[Service]
+Type=simple
+Nice=19
+IOSchedulingClass=2
+IOSchedulingPriority=7
+ExecStart={{ borg_scripts_directory }}/{{ item.name }}
