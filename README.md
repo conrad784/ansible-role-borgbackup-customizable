@@ -18,6 +18,7 @@ Currently tested on Debian.
 - `borg_one_file_system`: Don't cross file-system boundaries. Defaults to `false`
 - `borg_exclude_patterns`: List of paths or patterns to exclude from backup. See [official documentation](https://borgbackup.readthedocs.io/en/stable/usage/help.html#borg-help-patterns) for more.
 - `borg_scripts_directory`: Location where the backup scripts should be stored.
+- `borg_check_dow`: Day Of Week the check should be run on.
 
 Most of the variables can be global and also variable for the individual backupjobs.
 

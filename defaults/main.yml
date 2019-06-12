@@ -4,6 +4,7 @@ borg_scripts_directory: "/root/borg-scripts"
 borg_rsh: "ssh -i ~/.ssh/backup_key -oBatchMode=yes"
 borg_time: "*-*-* 06:00:00"
 borg_exclude_from: "/etc/borg_excludelist"
+borg_check_dow: 7
 
 borgbackup_jobs:
   - name: "borgSystem"

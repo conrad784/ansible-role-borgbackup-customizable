@@ -4,11 +4,11 @@
 dom=`(date +%d)`
 dow=`(date +%u)`
 
-if [ $dow -eq 7 ] && [ $dom -le 7 ]
+if [ $dow -eq {{ item.borg_check_dow | default( borg_check_dow ) }} ] && [ $dom -le 7 ]
 then
     info "Checking full repository and all archives"
     borg check -v
-elif [ $dow -eq 7 ]
+elif [ $dow -eq {{ item.borg_check_dow | default( borg_check_dow ) }} ]
 then
     info "Checking repository only"
     borg check -v --repository-only
