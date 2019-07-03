@@ -32,7 +32,7 @@ backup_exit=$?
 {% include './prune_section.j2' %}
 
 
-{% include './check_section.j2' %}
+{% if not (item.borg_skip_check is defined and item.borg_skip_check) %}{% include './check_section.j2' %}{% endif %}
 
 
 unset BORG_PASSPHRASE
