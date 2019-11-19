@@ -7,7 +7,7 @@ info "Pruning repository"
 
 borg prune                          \
     --list                          \
-    --prefix '{hostname}-'          \
+    --prefix '{hostname}-{user}-'   \
     --show-rc                       \
     {% if item.borg_prune_arguments is defined -%}
     {% for arg in item.borg_prune_arguments -%}
